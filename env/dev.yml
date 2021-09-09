@@ -1,0 +1,6 @@
+SECURITY_GROUP_ID: sg-xxxxxxxxxx
+SUBNET_ID_0: subnet-yyyyyyy1
+SUBNET_ID_1: subnet-yyyyyyy2
+SUBNET_ID_2: subnet-yyyyyyy3
+EFS_MOUNT_PATH: /mnt/efs-name
+EFS_ARN: arn:aws:elasticfilesystem:zzzzzzzzzzzzzzzzzzzzzzz

@@ -1,0 +1,60 @@
+service: deeplearningapi
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: us-east-2
+  timeout: 120
+  memorySize: 2048
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - lambda:InvokeFunction
+        - lambda:GetFunction
+        - s3:ListBucket
+        - s3:GetObject
+        - s3:PutObject
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+        - elasticfilesystem:ClientMount
+        - elasticfilesystem:ClientRootAccess
+        - elasticfilesystem:ClientWrite
+        - elasticfilesystem:DescribeMountTargets
+      Resource:
+        - "*"
+
+functions:
+  predict:
+    handler: handler.predict
+    environment: ${self:custom.environment.${self:provider.stage}}
+    events:
+      - httpApi:
+          path: /predict
+          method: get
+      - schedule:
+          name: periodic_execution_5min  # コールドスタート対策として，5分ごとにCloudWatchでアクセス
+          description: 'periodic_execution'
+          rate: rate(5 minutes)
+          input: '{"cron":"cron"}'
+          enabled: true
+    vpc:
+      securityGroupIds:
+        - ${file(env/aws_config.yml):SECURITY_GROUP_ID}
+      subnetIds:
+        - ${file(env/aws_config.yml):SUBNET_ID_0}
+        - ${file(env/aws_config.yml):SUBNET_ID_1}
+        - ${file(env/aws_config.yml):SUBNET_ID_2}
+    fileSystemConfig:
+      localMountPath: ${file(env/aws_config.yml):EFS_MOUNT_PATH}
+      arn: ${file(env/aws_config.yml):EFS_ARN}
+
+custom:
+  defaultStage: dev
+  environment: # 環境変数の設定先
+    dev: ${file(env/dev.yml)}
